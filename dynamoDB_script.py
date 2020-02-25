@@ -147,5 +147,5 @@ def uploadAll(dir_path):
     
 
 if __name__ == '__main__':
-    #uploadAll('data')
-    print(pullData('1xA_G41I-OVyZGXARY71UQ'))
+    uploadAll('data')
+    #print(pullData('1xA_G41I-OVyZGXARY71UQ'))
