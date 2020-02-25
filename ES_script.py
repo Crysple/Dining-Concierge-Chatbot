@@ -7,7 +7,7 @@ import requests
 from requests_aws4auth import AWS4Auth
 
 GLOBAL_INDEX = 0
-URL = 'https://search-restaurants-bwjnhe4g6tq5io67cjfgrrbiha.us-east-2.es.amazonaws.com/restaurants/{}'
+URL = 'https://search-restaurants-rnueuwllhgewuy3zxqid2q775y.us-east-1.es.amazonaws.com/restaurants/{}'
 
 def update_IP(nip):
     # update Src ip of ES Service
@@ -23,7 +23,7 @@ def update_IP(nip):
 
 def generate_es_data(file_path):
     global GLOBAL_INDEX
-    restaurants = json.load(open(file_path))[:10]
+    restaurants = json.load(open(file_path))
     ndjson = ""
     for rstr in restaurants:
         source = {
@@ -37,7 +37,7 @@ def generate_es_data(file_path):
 
     return ndjson
 
-def send_signed(method, url, service='es', region='us-east-2', body=None):
+def send_signed(method, url, service='es', region='us-east-1', body=None):
     credentials = boto3.Session().get_credentials()
     auth = AWS4Auth(credentials.access_key, credentials.secret_key, 
                   region, service, session_token=credentials.token)
@@ -48,9 +48,10 @@ def send_signed(method, url, service='es', region='us-east-2', body=None):
     try:
         response = fn(url, auth=auth, data=body, 
                         headers={"Content-Type":"application/json"})
-        print(response.status_code)
-        print(response.content)
-    except Exception as e:
+        if response.status_code != 200:
+            raise Exception("{} failed with status code {}".format(method.upper(), response.status_code))
+        return response.content
+    except Exception:
         raise
 
 def es_index(ndjson):
@@ -61,10 +62,16 @@ def es_index(ndjson):
 
 def es_search(criteria):
     url = URL.format('_search')
+    return send_signed('get', url, body=json.dumps(criteria))
+
+def get_restaurants_from_es(category):
+    """Given a category, return a list of restaurant ids in that category"""
     criteria = {
-        "query": { "match": {'category': 'american'} },
+        "query": { "match": {'category': category} },
     }
-    send_signed('get', url, body=json.dumps(criteria))
+    content = es_search(criteria)
+    content = json.loads(content)
+    return [rstr['_source']['id'] for rstr in content['hits']['hits']]
 
 def es_upload_resturant_data(dir_path):
     '''Read all json files from dir_path (one-level) and upload to ES'''
@@ -73,13 +80,17 @@ def es_upload_resturant_data(dir_path):
     for _, _, files in os.walk(dir_path):
         for file in files:
             file_path = os.path.join(dir_path, file)
-            ndjson = generate_es_data(file_path)
-            es_index(ndjson)
+            _, extension = os.path.splitext(file_path)
+            if extension == '.json':
+                ndjson = generate_es_data(file_path)
+                print("Uploading file {} to ElasticSearch".format(file_path))
+                es_index(ndjson)
+                print("File {} is uploaded successfully".format(file_path))
 
 def main():
     #update_IP('70.18.44.136')
-    es_upload_resturant_data('data')
-    es_search(None)
+    #es_upload_resturant_data('data')
+    print(get_restaurants_from_es("japanese"))
 
 if __name__ == '__main__':
     main()
