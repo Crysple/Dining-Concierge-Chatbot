@@ -19,3 +19,6 @@ We gather all of our code here. But because we use AWS to delopy this applicatio
 
 
 
+# Architecture View
+
+![image](https://user-images.githubusercontent.com/20517842/75211108-f9502200-5750-11ea-87d9-63cc59b1ec66.png)
