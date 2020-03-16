@@ -4,7 +4,7 @@ This is a serverless, microservice-driven web application using AWS (Amazon Web 
 
 
 
-We gather all of our code here. But because we use AWS to delopy this application, the code here cannot be run directly. The used AWS are listed as followings:
+We gather all of our code here. **Note that the code here cannot be run directly** because we use AWS to delopy this application. Almost half of the work is to create and configure AWS components. The used AWSs are listed as followings:
 
 - **S3** (deploy front-end stuff)
 - **API Gateway** with swagger (RESTful APIs)
